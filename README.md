@@ -64,7 +64,7 @@ This is a molecular dynamics simulation using
 the _velocity verlet algorithm_[1] for time integration. We make the
 lookup of interacting particles more efficient with a _linked list cell algorithm_[1]. Keeping
 the particles constrained to the surface of the sphere is done via
-the _RATTLE algorithm_[2]  (which can be solved analytically for this simple constraint).
+the _RATTLE algorithm_[2], which can be solved analytically for this simple constraint.
 
 The simulation is purely three-dimensional: all particles have 3d vectors
 for position, velocity and acceleration. In principle, as the particles
