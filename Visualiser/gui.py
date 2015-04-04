@@ -11,8 +11,6 @@ import sys
 #helper modules
 from vector import Vec
 
-import simple_simulation
-
 
 class Window(object):
 
@@ -144,9 +142,6 @@ class Window(object):
 
         glutSwapBuffers()
 
-
-if __name__ == "__main__":
-    p2 = Window(simple_simulation.Simulation())
 
 
 
