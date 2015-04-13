@@ -34,6 +34,7 @@ import ctypes as c
 import numpy as np
 import math
 import sys
+import os
 import Queue
 import threading
 import thread
@@ -44,6 +45,11 @@ from scipy.spatial import ConvexHull
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 clib = c.CDLL("./davis.so")
 
@@ -71,7 +77,7 @@ class Particle(c.Structure):
         ("r", Vec),
         ("v", Vec),
         ("a", Vec),
-        ("next", c.c_void_p),
+        ("next", c.c_int),
     ]
 
 class Stats(c.Structure):
@@ -110,6 +116,7 @@ class Cells(object):
 
 class Simulation(Visualiser.simulation.Simulation):
 
+
     def __init__(self, num_particles, dt, cutoff, gamma, binning=1):
         super(Simulation, self).__init__()
         self.ArrayType = Particle * num_particles
@@ -129,6 +136,51 @@ class Simulation(Visualiser.simulation.Simulation):
         self.point_size = POINT_SIZE
         self.observable_filename = "davis_observables.csv"
         self.has_new_NN_data = False
+
+    def to_pickle(self):
+        data = {
+            # constructor arguments:
+            'num_particles': self.num_particles.value,
+            'binning': self.binning,
+            'dt': self.dt.value,
+            'cutoff': self.cutoff.value,
+            'gamma': self.gamma.value,
+            # state attributes:
+            #    from https://wiki.python.org/moin/ctypes
+            'particles': buffer(self.particles)[:], 
+            'steps': self.steps,
+            'point_size': self.point_size,
+            'observable_filename': self.observable_filename,
+        }
+        return data
+
+    @classmethod
+    def from_pickle(cls, data):
+        constructor_args = ['num_particles', 'dt', 'cutoff', 'gamma', 'binning']
+        simu = cls(**dict((k, data[k]) for k in constructor_args))
+        simu.restore_state(data)
+        return simu
+
+    def restore_state(self, data):
+        # restore state
+        assert(c.sizeof(self.particles) == len(data['particles']))
+        # from https://wiki.python.org/moin/ctypes
+        c.memmove(c.addressof(self.particles), data['particles'], 
+                  len(data['particles']))
+        self.steps = data['steps']
+        self.point_size = data['point_size']
+        self.observable_filename = data['observable_filename']
+
+    def save(self):
+        # save state of simulation kernel
+        print "Saving..."
+        f_name = "checkpoint.data"
+        i = 0
+        while os.path.exists(f_name):
+            i += 1
+            f_name = "checkpoint_%d.data" % i
+        with open(f_name, "w") as f:
+            pickle.dump(self.to_pickle(), f)
 
     def timestep(self):
         if self.has_new_NN_data:
@@ -246,7 +298,15 @@ class ParallelSimulation(Simulation):
             t.daemon = True
             t.start()
             cell0 = cell1
-        print self.intervals
+
+    @classmethod
+    def from_pickle(cls, data, num_workers):
+        constructor_args = ['num_particles', 'dt', 'cutoff', 'gamma', 'binning',
+                            'num_workers']
+        data['num_workers'] = num_workers
+        simu = cls(**dict((k, data[k]) for k in constructor_args))
+        simu.restore_state(data)
+        return simu
 
     def worker_starter(self, i):
         # separate method for closure handling
@@ -332,22 +392,33 @@ def demo(N=100, dt=0.0001, cutoff=0.25, gamma=0.01,
         
     
 if __name__ == '__main__':
-    N = NUM_PARTICLES
-    A_perPartcile = 4*math.pi / N
-    cutoff = math.sqrt(A_perPartcile) * 2.5
-    print "cutoff", cutoff
-    # binning with regard to R=1 (so Lx=Ly=Lz=2.0)
-    binning = max(1, int(2.0/cutoff))
-    vel_scale = 15.0*cutoff    # purely handwaving
-    if PARALLEL > 1: 
-        simu_type = parallel_simulation(PARALLEL)
-        print "Parallel simulation"
+    if len(sys.argv) > 1:
+        with open(sys.argv[1]) as f:
+            data = pickle.load(f)
+        if PARALLEL > 1:
+            simu = ParallelSimulation.from_pickle(data, PARALLEL)
+            print "Parallel simulation"
+        else:
+            simu = Simulation.from_pickle(data)
+            print "Single threaded simulation"
     else:
-        simu_type = Simulation
-        print "Single threaded simulation"
-    simu = demo(N=N, dt=0.0001, cutoff=cutoff, gamma=0.01, 
-                vel_scale=cutoff, binning=binning,
-                simu_type=simu_type)
-    Window(simu, "Davis Sphere Simulation, N=%d" % N)
+        N = NUM_PARTICLES
+        A_perPartcile = 4*math.pi / N
+        cutoff = math.sqrt(A_perPartcile) * 2.5
+        print "cutoff", cutoff
+        # binning with regard to R=1 (so Lx=Ly=Lz=2.0)
+        binning = max(1, int(2.0/cutoff))
+        vel_scale = 15.0*cutoff    # purely handwaving
+        if PARALLEL > 1: 
+            simu_type = parallel_simulation(PARALLEL)
+            print "Parallel simulation"
+        else:
+            simu_type = Simulation
+            print "Single threaded simulation"
+        simu = demo(N=N, dt=0.0001, cutoff=cutoff, gamma=0.01, 
+                    vel_scale=cutoff, binning=binning,
+                    simu_type=simu_type)
+        
+    Window(simu, "Davis Sphere Simulation, N=%d" % simu.num_particles.value)
         
 
