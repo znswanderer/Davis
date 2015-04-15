@@ -71,6 +71,8 @@ class Vec(c.Structure):
     def __str__(self):
         return "(%f, %f, %f)" % (self.x, self.y, self.z)
 
+    def magnitude2(self):
+        return self.x**2 + self.y**2 + self.z**2
 
 class Particle(c.Structure):
     _fields_ = [
@@ -202,10 +204,16 @@ class Simulation(Visualiser.simulation.Simulation):
     def do_print_stats(self):
         s = self.stats
         print str(s),
-        print "N**2/2:", self.num_particles.value**2/2,
-        print "WW/(N**2/2):", s.ww_counter / (self.num_particles.value**2/2.0),
-        print "WW/Real_WW:", s.ww_counter / (1.0*s.real_ww_counter + 0.00001),
-        print "Real_WW/N", s.real_ww_counter / (self.num_particles.value*1.0)
+        #print "N**2/2:", self.num_particles.value**2/2,
+        #print "WW/(N**2/2):", s.ww_counter / (self.num_particles.value**2/2.0),
+        #print "WW/Real_WW:", s.ww_counter / (1.0*s.real_ww_counter + 0.00001),
+        #print "Real_WW/N", s.real_ww_counter / (self.num_particles.value*1.0)
+        max_v = math.sqrt(max(p.v.magnitude2() for p in self.particles))
+        max_a = math.sqrt(max(p.a.magnitude2() for p in self.particles))
+        print "v_max", max_v,
+        print "a_max", max_a,
+        dt = self.dt.value
+        print "delta", dt*max_v + 0.5*dt**2*max_a
 
     def retrieve_visual_data(self):
         # retrieve data from simulation kernel for color_data and position_data
