@@ -1,6 +1,6 @@
 from distutils.core import setup, Extension
 
-module1 = Extension("davis", 
+module1 = Extension("davis_clib", 
                     sources = ["davis.c"],
                     extra_compile_args = ["-O2", "-std=c99"])
 
