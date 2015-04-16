@@ -51,7 +51,8 @@ try:
 except ImportError:
     import pickle
 
-clib = c.CDLL("./davis_clib.so")
+module_path = os.path.split(__file__)[0]
+clib = c.CDLL(os.path.join(module_path, "davis_clib.so"))
 
 from Visualiser.gui import Window
 import Visualiser.simulation
