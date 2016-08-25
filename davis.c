@@ -148,7 +148,7 @@ inline void dvs_calc_force(Particle *p, Particle *q,
   particle in the linked list will be given by the "next"
   member of the linked particle struct.
 
-  See: https://en.wikipedia.org/wiki/Verlet_list
+  See: https://en.wikipedia.org/wiki/Cell_lists
  */
 
 void dvs_populate_cells(int nparticles, Particle *ps, Cells *cells)
