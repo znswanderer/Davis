@@ -1,3 +1,5 @@
+Docker image at https://hub.docker.com/r/tscheff/davis/
+
 # Molecular Dynamics Simulation on a Sphere
 
 Tim Scheffler, 2015.
