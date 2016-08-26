@@ -59,8 +59,8 @@ import Visualiser.simulation
 COLORING_INTERVAL = 4.0      # in seconds
 PARALLEL = 2                 # number of parallel workers
 #NUM_PARTICLES = 12           # Icosahedron
-NUM_PARTICLES = 40000          
-POINT_SIZE = 3
+NUM_PARTICLES = 4000          
+POINT_SIZE = 6
 
 class Vec(c.Structure):
     _fields_ = [
