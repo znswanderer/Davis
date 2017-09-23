@@ -51,8 +51,7 @@ try:
 except ImportError:
     import pickle
 
-module_path = os.path.split(__file__)[0]
-clib = c.CDLL(os.path.join(module_path, "davis_clib.so"))
+clib = c.CDLL("./davis_clib.so")
 
 from Visualiser.gui import Window
 import Visualiser.simulation
@@ -427,5 +426,6 @@ if __name__ == '__main__':
         simu = demo(N=N, dt=0.0001, cutoff=cutoff, gamma=0.01,
                     vel_scale=cutoff, binning=binning,
                     simu_type=simu_type)
-
+        simu.simulation_running = True
+        
     Window(simu, "Davis Sphere Simulation, N=%d" % simu.num_particles.value)

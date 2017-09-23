@@ -132,6 +132,25 @@ inline void dvs_calc_force(Particle *p, Particle *q,
   }
 }
 
+/*
+  The particles are put into cells and each particle has "next"
+  attribute that points to another particle number or -1 as a
+  marker for the end of the linked list.
+  
+  So the whole volume is divided into binning**3 equally spaced
+  cells. Each cell is just a int point given by
+  int particleNum = cells[x + L*y + L*L*z]
+  If particleNum is -1 this cell is empty.
+  Otherwise it points to the first particle in the cell.
+
+  In this manner particleNum is just the first entry
+  in a linked list of particle numbers. Each additional
+  particle in the linked list will be given by the "next"
+  member of the linked particle struct.
+
+  See: https://en.wikipedia.org/wiki/Cell_lists
+ */
+
 void dvs_populate_cells(int nparticles, Particle *ps, Cells *cells)
 {
   int bin_x, bin_y, bin_z;
