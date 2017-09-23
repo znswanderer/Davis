@@ -1,5 +1,5 @@
 /*
-C-part for 
+C-part for
 Molecular Dynamics Simulation on a Sphere
 To be used with python.
 
@@ -8,7 +8,7 @@ Radius of sphere is R = 1.
 
 MIT license
 
-Copyright(c) 2015 Tim Scheffler
+Copyright(c) 2015 - 2017 Tim Scheffler
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -73,14 +73,14 @@ void dvs_advance(int nparticles, Particle *ps, double dt)
     vec old_r = p->r;
     vec_inc(p->v, vec_sclr(dt_hlf, p->a));
     vec_inc(p->r, vec_sclr(dt, p->v));
-    
+
     // RATTLE_r (for sphere of R=1)
     double r0_dot_r = vec_dot(old_r, p->r);
     double r0_sqr = vec_dot(p->r, p->r);
     // TODO beware of negative sqrt arguments!
     // (But in this case the timestep dt is way too large anyway)
     double lambda = -r0_dot_r + sqrt(1.0 - r0_sqr + r0_dot_r*r0_dot_r);
-    
+
     vec_inc(p->r, vec_sclr(lambda, old_r));
     vec_inc(p->v, vec_sclr(lambda/dt, old_r));
   }
@@ -99,8 +99,8 @@ void dvs_correct(int nparticles, Particle *ps, double dt)
   }
 }
 
-inline void dvs_calc_force(Particle *p, Particle *q, 
-			   double cutoff, double gamma, 
+inline void dvs_calc_force(Particle *p, Particle *q,
+			   double cutoff, double gamma,
 			   Stats *stats)
 {
   vec dr = vec_sub(p->r, q->r);
@@ -110,7 +110,7 @@ inline void dvs_calc_force(Particle *p, Particle *q,
   if (r2 < cutoff2) {
     double r = sqrt(r2);
     stats->real_ww_counter++;
-    
+
     // Coulomb force
     double force_mag = 1.0/r2 - 1.0/cutoff2;
     stats->E_pot += 1.0/r + r/cutoff2 - 2.0/cutoff;
@@ -166,61 +166,28 @@ void dvs_calc_forces(Particle *ps, Cells *cells, int cell0, int cell1,
       for (int x=0; x<L; x++) {
 	int this_cell = x + L*y + L2*z;
 	if ((this_cell < cell0) || (this_cell >= cell1)) continue;
-	for (int i=cells->cells[this_cell]; i!=-1; i=ps[i].next) {
-	  // other particles in main cell (q > p)
-	  for (int j=ps[i].next; j!=-1; j=ps[j].next) {
-	    dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
-	  }
-	  // next neaerest cells
-	  int nnx, nny, nnz;
-	  nny = y;
-	  nnz = z;
-	  // to the right
-	  nnx = x + 1;
-	  if (nnx < L) {
-	    for (int j=cells->cells[nnx + nny*L + nnz*L2]; j!=-1; j=ps[j].next) {
-	      dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
-	    }
-	  }
-	  // upper row
-	  nny = y + 1;
-	  if (nny < L) {
-	    // ... upper-left
-	    nnx = x - 1;
-	    if (nnx >= 0) {
-	      for (int j=cells->cells[nnx + nny*L + nnz*L2]; j!=-1; j=ps[j].next) {
-		dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
-	      }
-	    }
-	    // ... upper-middle
-	    nnx = x;
-	    for (int j=cells->cells[nnx + nny*L + nnz*L2]; j!=-1; j=ps[j].next) {
-	      dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
-	    }
-	    // ... upper-right
-	    nnx = x + 1;
-	    if (nnx < L) {
-	      for (int j=cells->cells[nnx + nny*L + nnz*L2]; j!=-1; j=ps[j].next) {
-		dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
-	      }
-	    }
-	  }
-	  // plus possibly 9 NN boxes in the z+1 direction
-	  nnz = z + 1;
-	  if (nnz < L ) {
-	    for (nny=y-1; nny<=y+1; nny++) {
-	      if ((nny >= 0) && (nny < L)) {
-		for (nnx=x-1; nnx<=x+1; nnx++) {
-		  if ((nnx >= 0) && (nnx < L)) {
-		    for (int j=cells->cells[nnx + nny*L + nnz*L2]; j!=-1; j=ps[j].next) {
+	for (int nnz=MAX(0, z-1); nnz<MIN(L, z+2); nnz++) {
+	  for (int nny=MAX(0, y-1); nny<MIN(L, y+2); nny++) {
+	      for (int nnx=MAX(0, x-1); nnx<MIN(L, x+2); nnx++) {
+		int other_cell = nnx + nny*L + nnz*L2;
+		if (this_cell > other_cell) continue; // each cell pair only once!
+		if (this_cell == other_cell) {
+		  for (int i=cells->cells[this_cell]; i!=-1; i=ps[i].next) {
+		    // other particles in main cell (q > p)
+		    for (int j=ps[i].next; j!=-1; j=ps[j].next) {
 		      dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
 		    }
-		  } // nasty ...
+		  }
+		} else {
+		  for (int i=cells->cells[this_cell]; i!=-1; i=ps[i].next) {
+		    for (int j=cells->cells[other_cell]; j!=-1; j=ps[j].next) {
+		      dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
+		    }
+		  }
 		}
-	      } // ... curly ...
-	    }
+	      }
 	  }
-	} //... braces.
+	}
       }
     }
   }
@@ -248,4 +215,3 @@ void dvs_collect_forces(int nparticles, Particle *accu, Particle *part)
     vec_inc(accu[i].a, part[i].a);
   }
 }
-

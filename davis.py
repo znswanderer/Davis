@@ -1,5 +1,5 @@
 """
-Python part for 
+Python part for
 Molecular Dynamics Simulation on a Sphere
 
 Please see README.md for details.
@@ -60,7 +60,7 @@ import Visualiser.simulation
 COLORING_INTERVAL = 4.0      # in seconds
 PARALLEL = 2                 # number of parallel workers
 #NUM_PARTICLES = 12           # Icosahedron
-NUM_PARTICLES = 40000          
+NUM_PARTICLES = 6000
 POINT_SIZE = 3
 
 class Vec(c.Structure):
@@ -104,15 +104,15 @@ class Stats(c.Structure):
             my_val = getattr(self, name)
             other_val = getattr(other, name)
             setattr(self, name, my_val + other_val)
-                            
-        
+
+
 class Cells(object):
     def __init__(self, binning, num_particles):
         _make_cells = clib.Cells_new
         _make_cells.restype = c.c_void_p
         maker = lambda: c.cast(_make_cells(binning, num_particles), c.c_void_p)
         self.pointer = maker()
-    
+
     def __del__(self):
         clib.Cells_free(self.pointer)
 
@@ -150,7 +150,7 @@ class Simulation(Visualiser.simulation.Simulation):
             'gamma': self.gamma.value,
             # state attributes:
             #    from https://wiki.python.org/moin/ctypes
-            'particles': buffer(self.particles)[:], 
+            'particles': buffer(self.particles)[:],
             'steps': self.steps,
             'point_size': self.point_size,
             'observable_filename': self.observable_filename,
@@ -168,7 +168,7 @@ class Simulation(Visualiser.simulation.Simulation):
         # restore state
         assert(c.sizeof(self.particles) == len(data['particles']))
         # from https://wiki.python.org/moin/ctypes
-        c.memmove(c.addressof(self.particles), data['particles'], 
+        c.memmove(c.addressof(self.particles), data['particles'],
                   len(data['particles']))
         self.steps = data['steps']
         self.point_size = data['point_size']
@@ -196,9 +196,9 @@ class Simulation(Visualiser.simulation.Simulation):
         clib.dvs_advance(self.num_particles, self.particles, self.dt)
         clib.dvs_populate_cells(self.num_particles, self.particles,
                              self.cells.pointer)
-        clib.dvs_calc_forces(self.particles, 
+        clib.dvs_calc_forces(self.particles,
                              self.cells.pointer, 0, self.num_cells,
-                             self.cutoff, self.gamma, 
+                             self.cutoff, self.gamma,
                              c.pointer(self.stats))
         clib.dvs_correct(self.num_particles, self.particles, self.dt)
 
@@ -219,10 +219,7 @@ class Simulation(Visualiser.simulation.Simulation):
     def retrieve_visual_data(self):
         # retrieve data from simulation kernel for color_data and position_data
         self.get_3dPositions()
-        a = np.frombuffer(self.positions)    
-        self.position_data = a.reshape(-1, 3)        
-        self.has_data = True
-        if (not self.is_coloring 
+        if (not self.is_coloring
             and time.time() - self.last_coloring > COLORING_INTERVAL):
             self.is_coloring = True
             thread.start_new_thread(self.do_NN_coloring, ())
@@ -230,10 +227,13 @@ class Simulation(Visualiser.simulation.Simulation):
     def get_3dPositions(self):
         clib.dvs_visualise_positions(self.num_particles, self.particles,
                                      self.positions)
+        a = np.frombuffer(self.positions)
+        self.position_data = a.reshape(-1, 3)
+        self.has_data = True
 
     def render(self):
         glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)     
+        glEnable(GL_LIGHT0)
         glutSolidSphere(.99,128,128)
         glDisable(GL_LIGHTING)
         glColor3f(0., 1.0, 0.2)
@@ -243,7 +243,7 @@ class Simulation(Visualiser.simulation.Simulation):
         if not self.has_data:
             return
 
-        hull = ConvexHull(self.position_data) 
+        hull = ConvexHull(self.position_data)
         # TODO the following could be made more efficient?
         county = np.zeros(len(hull.points), int)
         for v in hull.simplices:
@@ -272,12 +272,12 @@ class Simulation(Visualiser.simulation.Simulation):
         self.is_coloring = False
         self.last_coloring = time.time()
         self.has_new_NN_data = True
-    
+
     def write_observables(self):
         # TODO with csv module
         with open(self.observable_filename, "a") as f:
-            f.write("%d, %f, %d, %d, %d\n" % 
-                    (self.steps, self.stats.E_pot, 
+            f.write("%d, %f, %d, %d, %d\n" %
+                    (self.steps, self.stats.E_pot,
                      self.count6, self.countless, self.countmore))
 
 
@@ -323,9 +323,9 @@ class ParallelSimulation(Simulation):
             print "started worker", i
             while True:
                 start_cell, end_cell = self.queue.get()
-                clib.dvs_calc_forces(self.particles_pw[i], self.cells.pointer, 
+                clib.dvs_calc_forces(self.particles_pw[i], self.cells.pointer,
                                      start_cell, end_cell,
-                                     self.cutoff, self.gamma, 
+                                     self.cutoff, self.gamma,
                                      c.pointer(self.stats_pw[i]))
                 self.queue.task_done()
         return start
@@ -335,7 +335,7 @@ class ParallelSimulation(Simulation):
         clib.dvs_populate_cells(self.num_particles, self.particles,
                              self.cells.pointer)
         for i in range(1, self.num_workers):
-            clib.dvs_copy_particles(self.num_particles, 
+            clib.dvs_copy_particles(self.num_particles,
                                     self.particles, self.particles_pw[i])
         for i in range(self.num_workers):
             self.stats_pw[i].reset()
@@ -343,7 +343,7 @@ class ParallelSimulation(Simulation):
             self.queue.put(i)
         self.queue.join()
         for i in range(1, self.num_workers):
-            clib.dvs_collect_forces(self.num_particles, 
+            clib.dvs_collect_forces(self.num_particles,
                                     self.particles, self.particles_pw[i])
             self.stats.collect(self.stats_pw[i])
 
@@ -379,8 +379,8 @@ def fibonacci_sphere(samples=1,randomize=True):
         points.append([x,y,z])
 
     return points
-    
-def demo(N=100, dt=0.0001, cutoff=0.25, gamma=0.01, 
+
+def demo(N=100, dt=0.0001, cutoff=0.25, gamma=0.01,
          binning=1, vel_scale=0.0, simu_type=Simulation):
     s = simu_type(N, dt=dt, cutoff=cutoff, gamma=gamma, binning=binning)
     points = fibonacci_sphere(int(N*1.0))
@@ -398,8 +398,8 @@ def demo(N=100, dt=0.0001, cutoff=0.25, gamma=0.01,
     # TODO: Reset all velocities to zero angular momentum?
     return s
 
-        
-    
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         with open(sys.argv[1]) as f:
@@ -418,16 +418,14 @@ if __name__ == '__main__':
         # binning with regard to R=1 (so Lx=Ly=Lz=2.0)
         binning = max(1, int(2.0/cutoff))
         vel_scale = 15.0*cutoff    # purely handwaving
-        if PARALLEL > 1: 
+        if PARALLEL > 1:
             simu_type = parallel_simulation(PARALLEL)
             print "Parallel simulation"
         else:
             simu_type = Simulation
             print "Single threaded simulation"
-        simu = demo(N=N, dt=0.0001, cutoff=cutoff, gamma=0.01, 
+        simu = demo(N=N, dt=0.0001, cutoff=cutoff, gamma=0.01,
                     vel_scale=cutoff, binning=binning,
                     simu_type=simu_type)
-        
-    Window(simu, "Davis Sphere Simulation, N=%d" % simu.num_particles.value)
-        
 
+    Window(simu, "Davis Sphere Simulation, N=%d" % simu.num_particles.value)
