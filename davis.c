@@ -136,7 +136,7 @@ inline void dvs_calc_force(Particle *p, Particle *q,
   The particles are put into cells and each particle has "next"
   attribute that points to another particle number or -1 as a
   marker for the end of the linked list.
-  
+
   So the whole volume is divided into binning**3 equally spaced
   cells. Each cell is just a int point given by
   int particleNum = cells[x + L*y + L*L*z]
@@ -187,24 +187,24 @@ void dvs_calc_forces(Particle *ps, Cells *cells, int cell0, int cell1,
 	if ((this_cell < cell0) || (this_cell >= cell1)) continue;
 	for (int nnz=MAX(0, z-1); nnz<MIN(L, z+2); nnz++) {
 	  for (int nny=MAX(0, y-1); nny<MIN(L, y+2); nny++) {
-	      for (int nnx=MAX(0, x-1); nnx<MIN(L, x+2); nnx++) {
-		int other_cell = nnx + nny*L + nnz*L2;
-		if (this_cell > other_cell) continue; // each cell pair only once!
-		if (this_cell == other_cell) {
-		  for (int i=cells->cells[this_cell]; i!=-1; i=ps[i].next) {
-		    // other particles in main cell (q > p)
-		    for (int j=ps[i].next; j!=-1; j=ps[j].next) {
-		      dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
-		    }
+	    for (int nnx=MAX(0, x-1); nnx<MIN(L, x+2); nnx++) {
+	      int other_cell = nnx + nny*L + nnz*L2;
+	      if (this_cell > other_cell) continue; // each cell pair only once!
+	      if (this_cell == other_cell) {
+		for (int i=cells->cells[this_cell]; i!=-1; i=ps[i].next) {
+		  // other particles in main cell (q > p)
+		  for (int j=ps[i].next; j!=-1; j=ps[j].next) {
+		    dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
 		  }
-		} else {
-		  for (int i=cells->cells[this_cell]; i!=-1; i=ps[i].next) {
-		    for (int j=cells->cells[other_cell]; j!=-1; j=ps[j].next) {
-		      dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
-		    }
+		}
+	      } else {
+		for (int i=cells->cells[this_cell]; i!=-1; i=ps[i].next) {
+		  for (int j=cells->cells[other_cell]; j!=-1; j=ps[j].next) {
+		    dvs_calc_force(ps + i, ps + j, cutoff, gamma, stats);
 		  }
 		}
 	      }
+	    }
 	  }
 	}
       }
