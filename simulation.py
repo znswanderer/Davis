@@ -14,7 +14,6 @@ class Simulation(threading.Thread):
     def __init__(self):
         super(Simulation, self).__init__()
         self.needs_new_data = False
-        self.has_data = False
         self.has_color_data = False
         self.last_print = 0
         self.color_data = None
@@ -28,9 +27,6 @@ class Simulation(threading.Thread):
     def get_color_data(self):
         return self.color_data
 
-    def get_position_data(self):
-        return self.position_data
-
     def retrieve_visual_data(self):
         # retrieve data from simulation kernel
         # for color_data and position_data
@@ -38,7 +34,7 @@ class Simulation(threading.Thread):
 
     def save(self):
         # save state of simulation kernel
-        print "Saving..."
+        print("Saving...")
 
     def timestep(self):
         # advance simulation kernel
@@ -47,22 +43,19 @@ class Simulation(threading.Thread):
     def render(self):
         # called from main thread (OpenGL)
         self.DATA_LOCK.acquire()
-        if self.has_data:
-            positions = self.get_position_data()
-            colors = self.get_color_data()
-            indices = np.arange(len(positions), dtype='i')
+        if not self.position_data is None:
             GL.glEnable(GL.GL_POINT_SMOOTH)
             GL.glPointSize(self.point_size)
             GL.glEnable(GL.GL_BLEND)
             GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
-            GL.glVertexPointerd(positions)
+            GL.glVertexPointerd(self.position_data)
             GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
-            if self.has_color_data:
-                GL.glColorPointerd(colors)
+            if not self.color_data is None:
+                GL.glColorPointerd(self.color_data)
                 GL.glEnableClientState(GL.GL_COLOR_ARRAY)
-            GL.glDrawArrays(GL.GL_POINTS, 0, len(positions))
+            GL.glDrawArrays(GL.GL_POINTS, 0, len(self.position_data))
             GL.glDisableClientState(GL.GL_VERTEX_ARRAY)
-            if self.has_color_data:
+            if not self.color_data is None:
                 GL.glDisableClientState(GL.GL_COLOR_ARRAY)
             GL.glDisable(GL.GL_BLEND)		
         self.DATA_LOCK.release()
@@ -78,7 +71,7 @@ class Simulation(threading.Thread):
         pass
 
     def do_print_stats(self):
-        print
+        pass
 
     def run(self):
         last_steps = self.steps
@@ -104,8 +97,8 @@ class Simulation(threading.Thread):
             
             if time.time() > self.last_print + self.PRINT_INTERVAL:
                 if self.print_stats:
-                    print "steps", self.steps-last_steps, 
-                    print "data_fetches", data_fetches,
+                    print("steps", self.steps-last_steps, end=' ') 
+                    print("data_fetches", data_fetches)
                     self.do_print_stats()
                 self.last_print = time.time()
                 last_steps = self.steps

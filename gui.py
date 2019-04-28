@@ -78,12 +78,12 @@ class Window(object):
         glutPostRedisplay()
 
     def on_key(self, *args):
-        ESCAPE = '\033'
-        if args[0] == ESCAPE or args[0] == 'q':
+        ESCAPE = b'\033'
+        if args[0] == ESCAPE or args[0] == b'q':
             sys.exit()
-        elif args[0] == 's':
+        elif args[0] == b's':
             self.simulation.save()
-        elif args[0] == 'g':
+        elif args[0] == b'g':
             self.simulation.start_run()
         else:
             self.simulation.handle_key(args[0])

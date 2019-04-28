@@ -65,32 +65,32 @@ def normalize(u):
 if __name__ == "__main__":
     v1 = Vec(np.arange(2))
     v2 = Vec(np.arange(2))
-    print "v1:", repr(v1)
-    print "v2:", repr(v2)
+    print("v1:", repr(v1))
+    print("v2:", repr(v2))
     v3 = v1 + v2
-    print "v3:", repr(v3)
+    print("v3:", repr(v3))
     v1[0] = 5
-    print "v1.x, v1[0]:", v1.x, v1[0]
+    print("v1.x, v1[0]:", v1.x, v1[0])
     v1.y = 6
-    print "v1.y, v1[1]:", v1.y, v1[1]
-    print "v1:", repr(v1)
+    print("v1.y, v1[1]:", v1.y, v1[1])
+    print("v1:", repr(v1))
 
-    print "====================="
-    print "v1.shape", v1.shape
-    print "multiply(v1,v1):", np.multiply(v1,v1)
-    print "dot(v1,v1):", np.dot(v1, v1)
+    print("=====================")
+    print("v1.shape", v1.shape)
+    print("multiply(v1,v1):", np.multiply(v1,v1))
+    print("dot(v1,v1):", np.dot(v1, v1))
 
-    print "3D ================"
+    print("3D ================")
     va = Vec([0,0,0])
-    print "va: ", repr(va)
+    print("va: ", repr(va))
     va.x = 2
     va.y = 9
     va.z = 5
-    print "va: ", repr(va)
+    print("va: ", repr(va))
     vb = Vec([1,1,1])
     vc = va + vb
-    print "v3: ", repr(vc)
-    print "dot(va, vb):", np.dot(va, vb)
+    print("v3: ", repr(vc))
+    print("dot(va, vb):", np.dot(va, vb))
 
 
 

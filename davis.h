@@ -18,14 +18,14 @@ typedef struct {
   vec r;
   vec v;
   vec a;
-  int next;
+  long next;
 } Particle;
 
 typedef struct {
   double dr;
-  int binning;
-  int num_cells;
-  int *cells;
+  long binning;
+  long num_cells;
+  long *cells;
 } Cells;
 
 typedef struct {

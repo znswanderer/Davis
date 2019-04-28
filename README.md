@@ -1,8 +1,6 @@
-Docker image at https://hub.docker.com/r/tscheff/davis/
-
 # Molecular Dynamics Simulation on a Sphere
 
-Tim Scheffler, 2015.
+Tim Scheffler, 2015 - 2019
 
 This is a Python/C project to demonstrate molecular dynamics 
 simulation on a sphere. The particles interact via a cutoff Coulomb potential.
@@ -15,44 +13,34 @@ should then give the optimal packing of N particles on a sphere.
 
 ##  Dependencies
 
-* Python 2.7
+* Python 3.x
 * A C-Compiler
 * SciPy
 * PyOpenGL
 
-Tested on OS X 10.10.2 and Linux Mint 17.1 Cinnamon 64-Bit.
+Tested on Kubuntu 18.04 with Python 3.7.3. Intel Core i5-6600 @ 3.30GHz.
+
 
 ## Building
+
+Use the following command to build the C-extension:
 
 `$ python setup.py build_ext -i`
 
 ## Usage
 
-Start the simulation with 
+Start the GUI simulation with 
 
-`$ python davis.py`
+`$ python run_davis_clib.py`
 
 Parameters (like e.g. number of particles or the number of used CPU cores) 
-are setup as global variables at the top of `davis.py`.
+are setup as global variables at the top of `run_davis_clib.py`.
 
 With focused OpenGL window you can drag the mouse (while clicking)
 to rotate the sphere. Use the following keys to control the simulation:
 
 * "g": start/pause the simulation
 * "q": quit
-
-The simulation writes a a file `davis_observables.csv` containing
-in each row the following data:
-
-* number of steps
-* potential energy
-* number of particles with 6 nearest neighbours 
-* number of particles with less than 6 nearest neighbours 
-* number of particles with more than 6 nearest neighbours 
-
-This `csv`-File can be plotted with
-
-`$ python plot.py davis_observables.csv`
 
 Please be aware, that there is no error handling in the C part. If something bad
 happens, like malloc can not get enough memory or there is a negative 
@@ -106,6 +94,11 @@ For this we use the [qhull](http://www.qhull.org/) implementation from
 In the OpenGL window all particles having six neighbours are coloured **green**, 
 particles having less than six neighbours are coloured **blue**, more than six **red**.
 
+Additionally we will draw a yellow circle with the radius r_c around one 
+particle. This is just a visual aid to judge the cutoff radius. The 
+center particle for this "cutoff sphere" is arbitrarily choosen to be
+N/2.
+
 For the initial configuration it is important, that the particles are not
 too close, because the Coulomb potential can become so large, that the
 simulation gets unstable. Therefore we use the method of [Fibonacci spheres](https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere/26127012#26127012) for a good first configuration.
@@ -122,12 +115,15 @@ The basis for the OpenGL visualisation is taken from ["Adventures in OpenCL"](ht
 
 MIT license
 
-Copyright(c) 2015 Tim Scheffler
+Copyright(c) 2015 - 2019 Tim Scheffler
 
 Some of the code is
 taken from other sources, and there should be a link to the original source.
 
 ## Example Simulation
+
+(These pictures were taken from a version of the visualisation in which
+the yellow "cutoff sphere" visual aid had not yet been implemented.)
 
 We have N = 40000 particles.
 
@@ -171,6 +167,113 @@ starting the dynamics the global structure from the Fibonacci spheres is
 destroyed and we temporarily get a configuration with worse NN (Nearest Neighbour) 
 distribution. But after that, the system slowly approaches the optimal configuration
 as it cools down. Hereby the approach to the ground state gets slower and slower.
+
+
+## Time complexity
+
+In the following we will take a look at how the linked cell algorithm
+influences the time complexity of the simulation.
+
+### Brute force implementation
+
+The Python class `BruteForceWorld` does not use the linked cell optimisation and
+calculates all particle-particle interactions during
+the force calculation sub-step. This means the time complexity scales with O(n^2).
+The `dvs_advance` and `dvs_correct` scale with O(n) and for the general infrastructure
+of the code we expect a O(1) behaviour. So, in the end we expect the runtime T(n) for n particles
+to be 
+
+    T(n) = a + b n + c n^2
+
+    with a, b, c >= 0
+
+The following log-log plot shows the time complexity for 7500 time steps and 
+varying particle numbers n. The time is given in seconds.
+
+![Time complexity of naive implementation](./Pictures/BruteForceWorld.png "Time complexity of naive implementation")
+
+The fitted curve is a = 7e-18, b = 2e-17, c = 7e-6, basically, just the quadratic term. 
+The fit was made using `scipy.optimize.curve_fit` and constraining the parameters to >= 0
+(without the constrain we might get negative parameters for the smaller polynomial terms,
+but this would make no sense as the above mentioend O(1) and O(n) parts of the simulation
+must increase the running time.)
+
+The plot only covers one decade in the n log scale, because the running times were becoming 
+quite long and I was impatient. One sees, that the time complexity, at least for larger n, 
+is approximated quite nicely by O(n^2), as expected.
+
+
+### Cell implementation with fixed cutoff
+
+In order to make the simulation more efficient if the interaction can be limited
+to a fixed range, we use the [linked cell algorithm](https://en.wikipedia.org/wiki/Cell_lists).
+As described above, we modify the original Coulomb interaction such that the
+force is cut-off at a given distance r_c.
+
+Using the linked cell algorithm we get the following running times:
+
+![Time complexity of cell implementation, fixed cutoff](./Pictures/cells_fixed_cutoff.png "Time complexity of cell implementation, fixed cutoff")
+
+As one can see, the timing is way better compared to the naive "brute force" implementation above. For example,
+in the brute force version the running time for a system of n = 10000 particles was T(n=10000) = 718s. 
+In the cell version we get T(n=10000) = 27s.
+
+But, as the cutoff distance is kept constant, in this case r_c = 0.1, the number of cells for
+the system is also constant. The force calculation however is cell-based, which means roughly,
+that for all particles inside a cell n_c we must calculate O(n_c ^ 2) interactions.
+For the fixed cutoff, however, n_c is proportional to n and therefore we see in the log-log 
+plot the O(n^2) behaviour for large n.
+
+
+
+### Cell implementation with varying cutoff
+
+Here we vary the cutoff in the following way:
+
+    cutoff = math.sqrt( 4*math.pi / n ) * 2.5
+
+This is because we expect the particles to be distributed evenly on the surface
+of the sphere (4&#960;), therefore the average area on the sphere for one
+particle is just 4&#960;/n and the radius of this area is just its 
+square root. We use this radius as the basis for the 3d cutoff although this
+radius is calculated on the 2d surface of the sphere. But as the particle
+number increases, the area inside the cutoff distance becomes more and more flat.
+So we expect, for large n, that the number of particles inside the cutoff
+distance around one particle stays constant, if we vary the cutoff for
+n following this formula.
+
+So we can assume, that the time complexity (for the force calculation, which takes
+most of the calculation time) per _occupied_ cell stays constant O(1). As 
+binning of the cells scales with 1/r_c in each dimension, which is n^(1/2).
+Given the spherical constraint only the cells, which contain parts of the surface of the
+sphere, will be populated by particles, the majority of cells will be empty.
+This surface is two-dimensional and the number of cells will scale with (1/r_c)^2.
+Therefore, we expect an overall time complexity of O(1 * (n^(1/2))^2) = O(n).
+
+![Time complexity of cell implementation, varying cutoff](./Pictures/cells_varying_cutoff.png "Time complexity of cell implementation, varying cutoff")
+
+As one can see, the samples belonging to the **green** dots follow O(n) for small n, but 
+as the number of particles, n, gets larger the complexity is larger than O(n).
+This is because the number of cells scales with (1/cutoff)^3 = n^(3/2). And as
+the number of cells increases more and more time is spent just for running through
+all the cells. This even more clearly seen for the **blue** dots, which belong to 
+a sample run with a different C-lib: In this C-lib the line
+
+    if (cells->cells[this_cell] == -1) continue;  // empty main cell
+
+in the davis.c file had not yet been added, so here we run all the following code (including looking up
+all neighbour cells) even if the main cell is empty. This increases the overall running
+time compared to the corrected version (green dots) and also introduces the O(n^(3/2)) 
+behaviour for much lower n, as one can see.
+ 
+
+
+### Remark
+
+For the time complexity measurements I only used the single-threaded versions
+of the algorithms, as the multi-threaded versions introduced some additional 
+periodic features in the n-dependencies, which seem to be of purely technical origin.
+
 
 
 
