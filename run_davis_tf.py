@@ -1,11 +1,14 @@
 import math
 import davis
-import davis_c
+
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
+
+import davis_tf
 from gui import Window
 
 
 if __name__ == '__main__':
-    PARALLEL = 4                 # number of parallel workers
     NUM_PARTICLES = 1000
     DT = 0.0001
     GAMMA = 0.01
@@ -17,7 +20,8 @@ if __name__ == '__main__':
     binning = max(1, int(2.0/cutoff))
     print("binning", binning)
 
-    world = davis_c.BruteForceWorld(NUM_PARTICLES, DT, GAMMA, cutoff, binning, num_workers=PARALLEL)
+    world = davis_tf.World(NUM_PARTICLES, DT, GAMMA, cutoff, binning)
+    world.build_graph()
     simu = davis.Simulation(world)
         
     Window(simu, "Davis Sphere Simulation, N=%d, dt=%.0le" % (NUM_PARTICLES, DT))

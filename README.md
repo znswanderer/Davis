@@ -275,6 +275,28 @@ of the algorithms, as the multi-threaded versions introduced some additional
 periodic features in the n-dependencies, which seem to be of purely technical origin.
 
 
+## TensorFlow Implementation
+
+The files `davis_tf.py` and `run_davis_tf.py` contain an experimental TensorFLow
+implementation of the MD-part. For a start, I just tried to re-create the 
+`BruteForceWorld` C-lib version of the MD-integration, which means at every
+timestep *all* O(n^2) particle-particle interactions will be calculated.
+
+For n = 1000 particles the TensorFlow version runs on the CPU at 
+approx. 100 steps / 2s. I chose to use the CPU instead of the GPU in order
+to compare the performance to the C-lib version of Davis: using the
+same number of particles, the C-lib version runs at approx. 2100 steps / 2s.
+
+I am not an expert in TensorFlow and so my TF implementation of the MD-integration
+might be too naive or maybe TF is just not suited well for this kind of problem.
+There surely is some room for optimisation in the TF implementation, for example:
+in the TF we calculate the sqrt for the `i > j` and `i < j` direction of a pair.
+In the C-lib however only the `i < j` direction is used. But this slight improvement
+would surely not help in the 20x performance lag of the TF-version.
+
+I tried various adjustments in the TF-version, but I could not manage to improve
+the performance anywhere near to the performance of the C-lib, so after some
+time I gave up on this.
 
 
 ## References
