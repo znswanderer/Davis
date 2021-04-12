@@ -6,7 +6,7 @@ Please see README.md for details.
 
 MIT license
 
-Copyright(c) 2015 - 2019 Tim Scheffler
+Copyright(c) 2015 - 2021 Tim Scheffler
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
