@@ -1,24 +1,9 @@
 from distutils.core import setup, Extension
 
+# This is a BAD quick fix for problems with the windows compilation
+# Inspired by:
 # https://stackoverflow.com/questions/58797673/how-to-compile-init-py-file-using-cython-on-windows
 from distutils.command.build_ext import build_ext
-"""
-def get_export_symbols_fixed(self, ext):
-      print("ext.name: {}".format(ext.name))
-      names = ext.name.split('.')
-      if names[-1] != "__init__":
-            initfunc_name = "PyInit_" + names[-1]
-      else:
-            # take name of the package if it is an __init__-file
-            initfunc_name = "PyInit_" + names[-2]
-      print("initfunc_name: {}".format(initfunc_name))
-      if initfunc_name not in ext.export_symbols:
-            ext.export_symbols.append(initfunc_name)
-      return ext.export_symbols
-"""
-
-# This is a BAD quick fix for problems with the windows 
-# compilation
 def get_export_symbols_fixed(self, ext):
     return [
           "Cells_free", 
