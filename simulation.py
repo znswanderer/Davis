@@ -3,6 +3,7 @@ import time
 import OpenGL.GL as GL
 import OpenGL.GLU as GLU
 import numpy as np
+import sys
 
 from gui import Window
 
@@ -23,6 +24,7 @@ class Simulation(threading.Thread):
         self.print_stats = True
         self.daemon = True
         self.steps = 0
+        self.keep_running = True
 
     def get_color_data(self):
         return self.color_data
@@ -73,10 +75,13 @@ class Simulation(threading.Thread):
     def do_print_stats(self):
         pass
 
+    def stop(self):
+        self.keep_running = False
+
     def run(self):
         last_steps = self.steps
         data_fetches = 0
-        while True:
+        while self.keep_running:
             self.LOCK.acquire()
             get_new_data = self.needs_new_data
             self.LOCK.release()

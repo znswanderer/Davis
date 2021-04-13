@@ -29,7 +29,7 @@ class Window(object):
         glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
         glutInitWindowSize(self.width, self.height)
         glutInitWindowPosition(0, 0)
-        self.win = glutCreateWindow(name)
+        self.win = glutCreateWindow(bytes(name, encoding="ascii"))
 
         #gets called by GLUT every frame
         glutDisplayFunc(self.draw)
@@ -80,7 +80,7 @@ class Window(object):
     def on_key(self, *args):
         ESCAPE = b'\033'
         if args[0] == ESCAPE or args[0] == b'q':
-            sys.exit()
+            self.simulation.stop()
         elif args[0] == b's':
             self.simulation.save()
         elif args[0] == b'g':

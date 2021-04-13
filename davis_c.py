@@ -37,8 +37,14 @@ import threading
 import fibonacci_sphere
 import glob
 import os
+import sys
 
 possible_clibs = glob.glob("davis_clib*")
+if "win32" in sys.platform:
+    possible_clibs = [lib for lib in possible_clibs if "-win_" in lib]
+elif "darwin" in sys.platform:
+    possible_clibs = [lib for lib in possible_clibs if "-darwin" in lib]
+
 if len(possible_clibs) == 1:
     lib_name = possible_clibs[0]
     print("Loading %s" % lib_name)
@@ -90,11 +96,13 @@ class Cells(object):
 
     def __init__(self, binning, num_particles):
         _make_cells = clib.Cells_new
+        print("dort")
         _make_cells.restype = c.c_void_p
         maker = lambda: c.cast(_make_cells(binning, num_particles), c.c_void_p)
         self.pointer = maker()
 
     def __del__(self):
+        print("Hier")
         clib.Cells_free(self.pointer)
 
 

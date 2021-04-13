@@ -17,7 +17,7 @@ if __name__ == '__main__':
     binning = max(1, int(2.0/cutoff))
     print("binning", binning)
 
-    world = davis_c.BruteForceWorld(NUM_PARTICLES, DT, GAMMA, cutoff, binning, num_workers=PARALLEL)
+    world = davis_c.ParallelWorld(NUM_PARTICLES, DT, GAMMA, cutoff, binning, num_workers=PARALLEL)
     simu = davis.Simulation(world)
         
     Window(simu, "Davis Sphere Simulation, N=%d, dt=%.0le" % (NUM_PARTICLES, DT))

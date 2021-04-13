@@ -22,3 +22,5 @@
 *.o
 
 *.data
+davis_clib.cp38-win_amd64.pyd
+.gitignore

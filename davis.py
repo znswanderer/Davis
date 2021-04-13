@@ -100,16 +100,17 @@ class Simulation(simulation.Simulation):
         GL.glColor3f(0., 1.0, 0.2)
         super(Simulation, self).render()
 
-        if not self.position_data is None:
-            i0 = int(len(self.position_data) / 2)
-            x, y, z = self.position_data[i0]
-            GL.glPushMatrix()
-            GL.glEnable(GL.GL_BLEND)
-            GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
-            GL.glTranslated(x, y, z)
-            GL.glColor4f(1, 1, 0, 0.5)
-            GLUT.glutSolidSphere(self.world.cutoff, 16, 16)
-            GL.glPopMatrix()
+        if False:
+            if not self.position_data is None:
+                i0 = int(len(self.position_data) / 2)
+                x, y, z = self.position_data[i0]
+                GL.glPushMatrix()
+                GL.glEnable(GL.GL_BLEND)
+                GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+                GL.glTranslated(x, y, z)
+                GL.glColor4f(1, 1, 0, 0.5)
+                GLUT.glutSolidSphere(self.world.cutoff, 16, 16)
+                GL.glPopMatrix()
 
     def do_NN_coloring(self):
         """Find the color for a particle based on the number of nearest neighbours."""
