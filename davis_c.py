@@ -96,13 +96,11 @@ class Cells(object):
 
     def __init__(self, binning, num_particles):
         _make_cells = clib.Cells_new
-        print("dort")
         _make_cells.restype = c.c_void_p
         maker = lambda: c.cast(_make_cells(binning, num_particles), c.c_void_p)
         self.pointer = maker()
 
     def __del__(self):
-        print("Hier")
         clib.Cells_free(self.pointer)
 
 
