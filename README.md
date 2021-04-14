@@ -18,7 +18,9 @@ should then give the optimal packing of N particles on a sphere.
 * SciPy
 * PyOpenGL
 
-Tested on Kubuntu 18.04 with Python 3.7.3. Intel Core i5-6600 @ 3.30GHz.
+Tested on Kubuntu 18.04 with Python 3.7.3. Intel Core i5-6600 @ 3.30GHz and
+macOS Big Sur, (anaconda) python 3.8.5.  
+(For running on Windows you might need `freeglut`)
 
 
 ## Building
