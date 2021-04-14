@@ -54,7 +54,7 @@ except ImportError:
 import numpy as np
 import OpenGL.GL as GL
 import OpenGL.GLUT as GLUT
-import scipy.spatial
+import scipy.spatial as spatial
 
 import _thread
 import simulation
@@ -117,7 +117,7 @@ class Simulation(simulation.Simulation):
         if self.position_data is None:
             return
 
-        hull = scipy.spatial.ConvexHull(self.position_data)
+        hull = spatial.ConvexHull(self.position_data)
         a = hull.simplices.reshape(-1)
         counts = np.bincount(a)
 

@@ -33,7 +33,7 @@ class Window(object):
 
         #gets called by GLUT every frame
         glutDisplayFunc(self.draw)
-        glutReshapeFunc(self.reshape);
+        glutReshapeFunc(self.reshape)
 
         #handle user input
         glutKeyboardFunc(self.on_key)
@@ -115,7 +115,7 @@ class Window(object):
         glViewport(0, 0, w, h)
         glMatrixMode(GL_PROJECTION)
         aspect = float(w) / float(h)
-        glLoadIdentity();
+        glLoadIdentity()
         if (w <= h):
             # width is smaller, so stretch out the height
             glOrtho(-size, size, -size/aspect, size/aspect, -10.0, 10.0)
